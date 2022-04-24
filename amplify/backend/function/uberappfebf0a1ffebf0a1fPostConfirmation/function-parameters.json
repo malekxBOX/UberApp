@@ -1,0 +1,17 @@
+{
+  "trigger": true,
+  "modules": [
+    "custom"
+  ],
+  "parentResource": "uberappfebf0a1ffebf0a1f",
+  "functionName": "uberappfebf0a1ffebf0a1fPostConfirmation",
+  "resourceName": "uberappfebf0a1ffebf0a1fPostConfirmation",
+  "parentStack": "auth",
+  "triggerEnvs": [],
+  "triggerDir": "C:\\snapshot\\node_modules\\@aws-amplify\\amplify-category-auth\\provider-utils\\awscloudformation\\triggers\\PostConfirmation",
+  "triggerTemplate": "PostConfirmation.json.ejs",
+  "triggerEventPath": "PostConfirmation.event.json",
+  "roleName": "uberappfebf0a1ffebf0a1fPostConfirmation",
+  "skipEdit": true,
+  "enableCors": false
+}

@@ -1,0 +1,37 @@
+type User @model @auth(rules: [
+    { allow: groups, groups: ["Admin"] },
+    { allow: owner, ownerField: "username", operations: [read] }
+  ]) {
+  id: ID!
+  username: String!
+  email: String!
+
+  # orders: [Order] @hasMany(indexName: "byUser", fields: ["id"])
+
+}
+
+# type Car @model @auth(rules: [{ allow: public }]){
+#   id: ID!
+#   type: String!
+#   latitude: Float,
+#   longitude: Float,
+#   heading: Float,
+#   isActive: Boolean
+
+#   orders: [Order] @hasMany(indexName: "byCar", fields: ["id"])
+
+# }
+
+# type Order @model @auth(rules: [{ allow: public }])
+#  {
+#   id: ID!
+#   createdAt: String!
+
+
+#   userId: ID!@index(name: "byUser")
+#  user: User @hasOne
+
+#   carId: ID!@index(name: "byCar", sortKeyFields: ["createdAt"])
+# car: Car @hasOne
+
+# }

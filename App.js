@@ -1,20 +1,60 @@
+import 'react-native-gesture-handler';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View,PermissionsAndroid, Platform } from 'react-native';
+import DestinationMapScreen from './src/Screens/DestinationMapScreen/DestinationMapScreen';
+import HomeScreen from './src/Screens/HomeScreen'
+import DestinationScreen from './src/Screens/DestinationScreen/DestinationScreen'
+import { useEffect } from 'react';
+import * as Location from 'expo-location'
+import RootNavigation from './src/navigation/RootNavigation';
+import { withAuthenticator } from 'aws-amplify-react-native';
 
-export default function App() {
+
+import { Amplify } from 'aws-amplify'
+import awsconfig from './src/aws-exports'
+Amplify.configure(awsconfig)
+
+ function App() {
+
+  const checkPermission = async()=>{
+    const hasPermission = await Location.requestForegroundPermissionsAsync();
+    if (hasPermission.status === 'granted') {
+        const permission = await askPermission();
+        return permission
+    }
+    return true
+};
+
+const askPermission = async()=>{
+    const permission = await Location.requestForegroundPermissionsAsync();
+    return permission.status === 'granted';
+};
+
+const getLocation = async()=>{
+    try {
+        const {granted} = await Location.requestForegroundPermissionsAsync();
+        if (!granted) {
+            return;
+        }
+        const {
+            coords:{latitude,longitude},
+        } = await Location.getCurrentPositionAsync();
+        setLatLng({latitude:latitude,longitude:longitude})
+    } catch (error) { 
+        
+    }
+}
+useEffect(()=>{
+  checkPermission();
+  getLocation(),[]
+})
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar barStyle="dark-content"/>
+      <RootNavigation/>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default withAuthenticator(App);
