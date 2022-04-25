@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
-import { Text, View,Image } from 'react-native'
+import { Text, View,Image, Pressable } from 'react-native'
 import { Icon } from 'react-native-elements'
 import styles from './styles'
 
 const UberTypeRow = (props)=> {
-  const {type} = props;
+  const {type, onPress, isSelected} = props;
 
   const getImage  = ()=>{
 if (type.type === 'UberX') {
@@ -18,7 +18,11 @@ if (type.type === 'UberXL') {
 }
   }
     return (
-      <View style={styles.container}>
+      <Pressable onPress={onPress} 
+      
+      style={[styles.container,{
+          backgroundColor:isSelected?'#efefef':'white',
+         }]}>
     
         <Image 
             style={styles.image}
@@ -48,7 +52,7 @@ if (type.type === 'UberXL') {
             <Text style={styles.price}> est. ${type.price}</Text>
         </View>
 
-      </View>
+      </Pressable>
     )
   
 }

@@ -2,10 +2,8 @@ import React from 'react'
 import { Text, View ,Image, Pressable} from 'react-native'
 import { Icon } from 'react-native-elements'
 import styles from './styles'
-const  NewOrderPopup = () =>{
-  const onDecline = () =>{
-      console.warn('on decline order')
-  }
+const  NewOrderPopup = ({newOrder, onAccept, onDecline, duration, distance}) =>{
+
     return (
       <View style = {
           styles.root
@@ -13,11 +11,11 @@ const  NewOrderPopup = () =>{
         <Pressable onPress={onDecline} style={styles.declineButton}>
             <Text style={styles.declineText}>Decline</Text>
         </Pressable>
-        <View style={
+        <Pressable onPress={onAccept} style={
             styles.popupContainer
         }>
             <View style={styles.row}>
-                <Text style={styles.uberType}>UberX</Text>
+                <Text style={styles.uberType}>{newOrder.type}</Text>
                 <Icon 
                     type='material-community'
                     name='account'
@@ -32,12 +30,12 @@ const  NewOrderPopup = () =>{
                     color='white'
                     size={18}
                     />
-                    5
+                    {newOrder.user.rating}
                 </Text>
             </View>
-            <Text style={styles.minutes}>2 min</Text>
-            <Text style={styles.distance}>0.2 mi</Text>
-        </View>
+            <Text style={styles.minutes}>{duration} min</Text>
+            <Text style={styles.distance}>{distance}mi</Text>
+        </Pressable>
       </View>
     )
   

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Dimensions, Pressable, Text, View } from 'react-native'
 import { Icon } from 'react-native-elements';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
@@ -13,8 +13,139 @@ const GOOGLE_MAPS_APIKEY = 'AIzaSyBXGuBOL4bHYuxTN24G2kWV6YsHByPlVT8';
 
 const  HomeScreen = (props) => {
   const [isOnline, setIsOnline] = useState(false);
+  const [myPosition, setMyPosition] = useState(null);
+  const [order, setOrder] = useState(null);
+
+  const [newOrder, setNewOrder] = useState({
+    id:'1',
+    type:'UberX',
+    // 35.8174971824911, 10.640756287352575
+    originLatitude:35.8120 ,
+    oreiginLongitude: 10.6260,
+    destLatitude: 36.8065,
+    destLongitude: 10.1815,
+    user:{
+      rating: 4.0,
+      name: 'Ciara',
+    },
+  })
+
+  const onDecline = () =>{
+    setNewOrder(null)
+  }
+
+  const onAccept = () => {
+    setOrder(newOrder)
+    setNewOrder(null)
+  }
+
   const onGoPress = () =>{
     setIsOnline(!isOnline);
+  }
+
+  const onUserLocationChange = (event) =>{
+ 
+    setMyPosition(event.nativeEvent.coordinate)
+  }
+  const onDirectionFound = (event) =>{
+    
+    console.log("Direction Found", event)
+    if(order) {
+      setOrder({
+        ...order,
+        distance: event.distance,
+        duration: event.duration,
+        pickedUp: order.pickedUp || event.distance < 0.3,
+        isFinished: order.pickedUp && event.distance < 0.2,
+      })
+    }
+  }
+
+const getDestination = () =>{
+  if(order && order.pickedUp){
+    return {
+      latitude: order.destLatitude,
+      longitude: order.destLongitude,
+    }
+  }
+  return {
+    latitude: order.originLatitude,
+    longitude: order.oreiginLongitude,
+  }
+}
+
+
+
+  const renderBottomTitle = () =>{
+
+    if(order && order.isFinished){
+        return (
+          <View style={{alignItems:'center'}}>
+            <View style={{flexDirection:'row',alignItems:'center',backgroundColor:'#cb1a1a',width:200,padding:10,justifyContent:'center'}}>
+              <Text> COMPLETE {order.type}</Text>
+            </View>
+            <Text style={styles.bottomText}>
+            {order.user.name} 
+            </Text>
+          </View>
+        )
+      }
+
+    if(order && order.pickedUp){
+      
+      return (
+        <View style={{alignItems:'center'}}>
+          <View style={{flexDirection:'row',alignItems:'center'}}>
+            <Text>{order.duration ? order.duration.toFixed(1):'?'} min</Text>
+            <View style={{backgroundColor:'#d41212',marginHorizontal:20, width:30,height:30,alignItems:'center',justifyContent:'center',borderRadius:20}}>
+              <Icon 
+              type='material-community'
+              name='account'
+              size={20}
+              color='white'
+              />
+            </View>
+            <Text>{order.distance ? order.distance.toFixed(1) : '?'} km</Text>
+          </View>
+          <Text style={styles.bottomText}>
+          Dropping Off {order.user.name} 
+          </Text>
+        </View>
+      )
+    }
+
+
+    if(order){
+      
+      return (
+        <View style={{alignItems:'center'}}>
+          <View style={{flexDirection:'row',alignItems:'center'}}>
+            <Text>{order.duration ? order.duration.toFixed(1):'?'} min</Text>
+            <View style={{backgroundColor:'#1e9203',marginHorizontal:20, width:30,height:30,alignItems:'center',justifyContent:'center',borderRadius:20}}>
+              <Icon 
+              type='material-community'
+              name='account'
+              size={20}
+              color='white'
+              />
+            </View>
+            <Text>{order.distance ? order.distance.toFixed(1) : '?'} km</Text>
+          </View>
+          <Text style={styles.bottomText}>
+          Picking Up {order.user.name} 
+          </Text>
+        </View>
+      )
+    }
+     if ( isOnline )
+       return (
+       <Text style={styles.bottomText} >You're Online </Text>
+       )
+    else
+    return (
+      <Text style={styles.bottomText} >You're offline </Text>
+      )
+    
   }
 
     return (
@@ -27,6 +158,7 @@ const  HomeScreen = (props) => {
         }}
         provider={PROVIDER_GOOGLE} // remove if not using Google Maps
         showsUserLocation={true}
+        onUserLocationChange={onUserLocationChange}
         followsUserLocation={true}
         zoomEnabled={true}
         rotateEnabled={true}
@@ -37,11 +169,17 @@ const  HomeScreen = (props) => {
           latitudeDelta: 0.015,
           longitudeDelta: 0.0121,
        }}>
-         <MapViewDirections
-          origin={origin}
-          destination={destination}
-          apikey={GOOGLE_MAPS_APIKEY}
-         />
+         {order && (
+              <MapViewDirections
+              onReady={onDirectionFound}
+              origin={myPosition}
+              destination={getDestination()}
+              apikey={GOOGLE_MAPS_APIKEY}
+              strokeWidth= {6}
+              strokeColor= 'red'
+            />
+         )}
+         
      </MapView>
 
      <Pressable
@@ -104,20 +242,17 @@ const  HomeScreen = (props) => {
         />
        </Pressable>
 
-      
-      
-        {
-          isOnline
-          ? <Pressable
-          onPress={onGoPress}
-          style={[styles.goButton,{bottom:110,right:10,backgroundColor:'red'}]}
-          ><Text style = {styles.goText}>END</Text></Pressable> 
-          :<Pressable
+      <Pressable
           onPress={onGoPress}
           style={[styles.goButton,{bottom:110,right:10}]}
-          ><Text style = {styles.goText}>Go</Text></Pressable> 
+          >
+      <Text style = {styles.goText}>
+        {
+          isOnline ? 'END' : 'GO'
+         
         }
-      
+        </Text>
+      </Pressable>
        
 
 
@@ -128,11 +263,7 @@ const  HomeScreen = (props) => {
           size={24}
           color='#4a4a4a'
         />
-        {
-          isOnline 
-          ? <Text style={styles.bottomText} >You're Online </Text>
-          : <Text style={styles.bottomText} >You're offline </Text>
-        }
+      {renderBottomTitle()}
         
         <Icon 
           type='material-community'
@@ -141,8 +272,14 @@ const  HomeScreen = (props) => {
           color='#4a4a4a'
         />
      </View>
-     <NewOrderPopup />
-      </View>
+     {newOrder && <NewOrderPopup 
+      newOrder = {newOrder}
+      duration = {2}
+      distance = {0.5}
+      onDecline = {onDecline}
+      onAccept = {()=>onAccept(newOrder)}
+     />}
+     </View>
     )
   
 }
