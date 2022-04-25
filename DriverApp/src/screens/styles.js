@@ -2,7 +2,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const styles = StyleSheet.create({
   bottomContainer: {
-    height: 100,
+    height: 80,
     backgroundColor: 'white',
     flexDirection: 'row',
     justifyContent: 'space-between',
