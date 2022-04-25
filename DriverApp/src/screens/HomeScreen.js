@@ -5,17 +5,18 @@ import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import styles from './styles'
 import NewOrderPopup from '../components/NewOrderPopup';
-
+import { API,graphqlOperation,Auth } from 'aws-amplify';
+import {getCar} from '../graphql/queries';
+import { updateCar } from '../graphql/mutations';
 
 const origin = {latitude: 35.6324, longitude: 10.8960};
 const destination = {latitude: 35.8245, longitude: 10.6346};
 const GOOGLE_MAPS_APIKEY = 'AIzaSyBXGuBOL4bHYuxTN24G2kWV6YsHByPlVT8';
 
 const  HomeScreen = (props) => {
-  const [isOnline, setIsOnline] = useState(false);
+  const [car, setCar] = useState(null);
   const [myPosition, setMyPosition] = useState(null);
   const [order, setOrder] = useState(null);
-
   const [newOrder, setNewOrder] = useState({
     id:'1',
     type:'UberX',
@@ -30,6 +31,23 @@ const  HomeScreen = (props) => {
     },
   })
 
+  const fetchCar = async()=>{
+    try {
+      const userData = await Auth.currentAuthenticatedUser();
+      const carData = await API.graphql(
+        graphqlOperation(
+          getCar, {id: userData.attributes.sub}
+        ),
+      );
+      setCar(carData.data.getCar);
+    } catch (e) {
+      console.error(e)
+    }
+  }
+useEffect(()=>{
+fetchCar();
+},[])
+
   const onDecline = () =>{
     setNewOrder(null)
   }
@@ -39,8 +57,24 @@ const  HomeScreen = (props) => {
     setNewOrder(null)
   }
 
-  const onGoPress = () =>{
-    setIsOnline(!isOnline);
+  const onGoPress = async () =>{
+    // Update the car and set it to active
+    try {
+      const userData = await Auth.currentAuthenticatedUser();
+      const input = {
+        id:userData.attributes.sub,
+        isActive: !car.isActive,
+      }
+      const updateCarData = await API.graphql(
+        graphqlOperation(
+          updateCar,{input}
+        )
+      )
+      console.log(updateCarData.data.updateCar);
+      setCar(updateCarData.data.updateCar);
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const onUserLocationChange = (event) =>{
@@ -137,7 +171,7 @@ const getDestination = () =>{
         </View>
       )
     }
-     if ( isOnline )
+     if ( car?.isActive )
        return (
        <Text style={styles.bottomText} >You're Online </Text>
        )
@@ -248,7 +282,7 @@ const getDestination = () =>{
           >
       <Text style = {styles.goText}>
         {
-          isOnline ? 'END' : 'GO'
+          car?.isActive ? 'END' : 'GO'
          
         }
         </Text>
