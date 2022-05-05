@@ -6,9 +6,8 @@ import MapViewDirections from 'react-native-maps-directions';
 import styles from './styles'
 import NewOrderPopup from '../components/NewOrderPopup';
 import { API,graphqlOperation,Auth } from 'aws-amplify';
-import {getCar} from '../graphql/queries';
-import { updateCar } from '../graphql/mutations';
-
+import {getCar, listOrders} from '../graphql/queries';
+import { updateCar, updateOrder } from '../graphql/mutations';
 const origin = {latitude: 35.6324, longitude: 10.8960};
 const destination = {latitude: 35.8245, longitude: 10.6346};
 const GOOGLE_MAPS_APIKEY = 'AIzaSyBXGuBOL4bHYuxTN24G2kWV6YsHByPlVT8';
@@ -17,19 +16,9 @@ const  HomeScreen = (props) => {
   const [car, setCar] = useState(null);
   const [myPosition, setMyPosition] = useState(null);
   const [order, setOrder] = useState(null);
-  const [newOrder, setNewOrder] = useState({
-    id:'1',
-    type:'UberX',
-    // 35.8174971824911, 10.640756287352575
-    originLatitude:35.8120 ,
-    oreiginLongitude: 10.6260,
-    destLatitude: 36.8065,
-    destLongitude: 10.1815,
-    user:{
-      rating: 4.0,
-      name: 'Ciara',
-    },
-  })
+  const [newOrders, setNewOrders] = useState(
+    []
+  )
 
   const fetchCar = async()=>{
     try {
@@ -44,17 +33,48 @@ const  HomeScreen = (props) => {
       console.error(e)
     }
   }
+  const fetchOrders = async() =>{
+    try {
+      const ordersData = await API.graphql(
+        graphqlOperation(
+          listOrders,
+          {filter: {status: {eq: "NEW"}}}
+          )
+      );
+      setNewOrders(ordersData.data.listOrders.items);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 useEffect(()=>{
 fetchCar();
+fetchOrders();
 },[])
 
   const onDecline = () =>{
-    setNewOrder(null)
+    setNewOrders(newOrders.slice(1));
   }
 
-  const onAccept = () => {
-    setOrder(newOrder)
-    setNewOrder(null)
+  const onAccept = async (newOrder) => {
+
+    try {
+      const input = {
+        id: newOrder.id,
+        status: "PICKING_UP_CLIENT",
+        carId: car.id,
+      }
+      const orderData = await API.graphql(
+        graphqlOperation(
+           updateOrder, {input}
+        )
+      )
+      setOrder(orderData.data.updateOrder)
+    } catch (e) {
+      console.error(e)
+    }
+
+    
+    setNewOrders(newOrders.slice(1));
   }
 
   const onGoPress = async () =>{
@@ -77,9 +97,30 @@ fetchCar();
     }
   }
 
-  const onUserLocationChange = (event) =>{
+  const onUserLocationChange = async (event) =>{
  
-    setMyPosition(event.nativeEvent.coordinate)
+    
+    const {latitude, longitude, heading} = event.nativeEvent.coordinate
+          // Update the car and set it to active
+      try {
+        const userData = await Auth.currentAuthenticatedUser();
+        const input = {
+          id:userData.attributes.sub,
+          latitude,
+          longitude,
+          heading,
+        }
+        const updateCarData = await API.graphql(
+          graphqlOperation(
+            updateCar,{input}
+          )
+        )
+        console.log(updateCarData.data.updateCar);
+        setCar(updateCarData.data.updateCar);
+      } catch (e) {
+        console.error(e)
+      }
+    
   }
   const onDirectionFound = (event) =>{
     
@@ -119,12 +160,12 @@ const getDestination = () =>{
               <Text> COMPLETE {order.type}</Text>
             </View>
             <Text style={styles.bottomText}>
-            {order.user.name} 
+            {order.user.username} 
             </Text>
           </View>
         )
       }
-
+// Auth.signOut();
     if(order && order.pickedUp){
       
       return (
@@ -142,7 +183,7 @@ const getDestination = () =>{
             <Text>{order.distance ? order.distance.toFixed(1) : '?'} km</Text>
           </View>
           <Text style={styles.bottomText}>
-          Dropping Off {order.user.name} 
+          Dropping Off {order.user.username} 
           </Text>
         </View>
       )
@@ -166,7 +207,7 @@ const getDestination = () =>{
             <Text>{order.distance ? order.distance.toFixed(1) : '?'} km</Text>
           </View>
           <Text style={styles.bottomText}>
-          Picking Up {order.user.name} 
+          Picking Up {order.user.username} 
           </Text>
         </View>
       )
@@ -181,8 +222,9 @@ const getDestination = () =>{
       )
     
   }
-
+ 
     return (
+      
       <View>
           
           <MapView
@@ -206,7 +248,10 @@ const getDestination = () =>{
          {order && (
               <MapViewDirections
               onReady={onDirectionFound}
-              origin={myPosition}
+              origin={{
+                latitude: car?.latitude,
+                longitude: car?.longitude,
+              }}
               destination={getDestination()}
               apikey={GOOGLE_MAPS_APIKEY}
               strokeWidth= {6}
@@ -306,12 +351,12 @@ const getDestination = () =>{
           color='#4a4a4a'
         />
      </View>
-     {newOrder && <NewOrderPopup 
-      newOrder = {newOrder}
+     {newOrders.length > 0 && !order && <NewOrderPopup 
+      newOrder = {newOrders[0]}
       duration = {2}
-      distance = {0.5}
+      distance = {0.2}
       onDecline = {onDecline}
-      onAccept = {()=>onAccept(newOrder)}
+      onAccept = {()=>onAccept(newOrders[0])}
      />}
      </View>
     )

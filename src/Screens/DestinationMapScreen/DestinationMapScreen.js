@@ -37,6 +37,7 @@ const DestinationMapScreen = (props) =>{
          destLongitude:destinationPlace.details.geometry.location.lat,
          userId:userInfo.attributes.sub,
          carId:"1",
+         status: "NEW",
        } 
 
       const response = await API.graphql(
@@ -48,14 +49,7 @@ const DestinationMapScreen = (props) =>{
       )
 
       console.log(response);
-      Alert.alert(
-        "hurry",
-        "your order has been submitted",
-        [{
-            text:"Go home",
-            onPress: () => navigation.navigate('Home')
-        }]
-        )
+      navigation.navigate('OrderPage' , {id:response.data.createOrder.id})
 
     } catch (e) {
       console.error(e);

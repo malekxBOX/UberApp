@@ -43,13 +43,14 @@ if (type.type === 'UberXL') {
         </View>
 
         <View style={styles.rightContainer}>
+            
+            <Text style={styles.price}> {type.price} TDN </Text>
             <Icon 
             type='material-community'
             name='cash'
             size={18}
             color={'#42d742'}
             />
-            <Text style={styles.price}> est. ${type.price}</Text>
         </View>
 
       </Pressable>
